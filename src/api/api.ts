@@ -1,7 +1,6 @@
 import { AXIOS_TIME_OUT_ERROR_KEY, logAxiosResponse } from 'axios-curlirize';
 import axios, { AxiosError } from 'axios';
-import { CourseModel, TagModel } from 'src/api/models.ts';
-import { collectUniqueTags } from 'src/utils/tags.utils.ts';
+import { CourseModel } from 'src/api/models.ts';
 
 const TIMEOUT = 15000;
 export const axiosV1 = axios.create({
@@ -17,19 +16,8 @@ export function processApiError(error: AxiosError) {
 }
 
 class Api {
-  fetchCourses = async (): Promise<
-    | { type: 'error'; error: string }
-    | { type: 'success'; tags: TagModel[]; courses: CourseModel[] }
-  > => {
-    const response = await axiosV1.get<CourseModel[]>('/courses.json');
-    if (response instanceof AxiosError) {
-      return { type: 'error', error: processApiError(response) };
-    }
-    return {
-      type: 'success',
-      tags: collectUniqueTags(response.data),
-      courses: response.data,
-    };
+  fetchCourses = async () => {
+    return await axiosV1.get<CourseModel[]>('/courses.json');
   };
 }
 

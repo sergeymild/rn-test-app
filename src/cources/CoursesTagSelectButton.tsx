@@ -1,4 +1,4 @@
-import React, { memo, RefObject, useCallback, useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { TagModel } from 'src/api/models.ts';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { fonts, theme } from 'src/theme.ts';
@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TagsSelectionModal } from 'src/cources/tags/TagsSelectionModal.tsx';
 
 interface Props {
-  tags: RefObject<TagModel[]>;
+  tags: TagModel[];
   onSelect: (index: number) => void;
 }
 
@@ -23,7 +23,7 @@ export const CoursesTagSelectButton: React.FC<Props> = memo(props => {
   const onSelect = useCallback(
     (index: number) => {
       props.onSelect(index);
-      setSelected(props.tags.current[index]);
+      setSelected(props.tags[index]);
       setModalVisible(false);
     },
     [props],
@@ -40,7 +40,7 @@ export const CoursesTagSelectButton: React.FC<Props> = memo(props => {
         <IconView icon={'arrow_down'} containerStyle={styles.arrowWrapper} />
         <TagsSelectionModal
           selected={selected}
-          tags={props.tags.current}
+          tags={props.tags}
           onClose={onClose}
           isVisible={isModalVisible}
           onSelect={onSelect}

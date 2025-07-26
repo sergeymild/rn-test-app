@@ -1,68 +1,59 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { theme } from 'src/theme.ts';
 import { LoaderView } from 'src/compontntes/LoaderView.tsx';
-import { api } from 'src/api/api.ts';
 import { ErrorView } from 'src/compontntes/ErrorView.tsx';
-import { CourseModel, TagModel } from 'src/api/models.ts';
+import { CourseModel } from 'src/api/models.ts';
 import { CourseListItem } from 'src/cources/CourseListItem.tsx';
 import { CoursesTagSelectButton } from 'src/cources/CoursesTagSelectButton.tsx';
 import { filterCoursesByTag } from 'src/utils/tags.utils.ts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFetchCourses } from 'src/cources/hooks/useFetchCourses.ts';
 
 export const CoursesListView: React.FC = memo(() => {
   const safe = useSafeAreaInsets();
-  const [isLoading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<string | undefined>();
-  const [courses, setCourses] = useState<CourseModel[]>([]);
-  const originalCourses = useRef<CourseModel[]>([]);
-  const tags = useRef<TagModel[]>([]);
+  const state = useFetchCourses();
+  const [filteredCourses, setFilteredCourses] = useState<CourseModel[]>([]);
 
-  useEffect(() => {
-    api
-      .fetchCourses()
-      .then(response => {
-        if (response.type === 'error') {
-          return setErrors(response.error);
-        }
-        originalCourses.current = response.courses;
-        tags.current = response.tags;
-        setCourses(response.courses);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const onSelect = useCallback((index: number) => {
-    const tag = tags.current[index];
-    setCourses(filterCoursesByTag(originalCourses.current, tag));
-  }, []);
+  const onSelect = useCallback(
+    (index: number) => {
+      if (state.type !== 'success') return;
+      const tag = state.tags[index];
+      setFilteredCourses(filterCoursesByTag(state.courses, tag));
+    },
+    [state],
+  );
 
   let paddingLeft = safe.left || 24;
   let paddingRight = safe.right || 24;
 
   return (
     <View style={styles.base}>
-      {isLoading && !errors && <LoaderView />}
-      {!!errors && <ErrorView errors={errors} />}
-      {!isLoading && courses.length > 0 && (
-        <CoursesTagSelectButton tags={tags} onSelect={onSelect} />
+      {state.type === 'loading' && <LoaderView />}
+      {state.type === 'error' && <ErrorView errors={state.error} />}
+      {state.type === 'success' && (
+        <>
+          <CoursesTagSelectButton tags={state.tags} onSelect={onSelect} />
+          <View style={styles.centerContainer}>
+            <View style={styles.listWrapper}>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.contentContainer,
+                  { paddingLeft, paddingRight },
+                ]}
+                data={
+                  filteredCourses.length > 0 ? filteredCourses : state.courses
+                }
+                renderItem={info => {
+                  return <CourseListItem item={info.item} />;
+                }}
+              />
+            </View>
+          </View>
+        </>
       )}
-      <View style={styles.centerContainer}>
-        <View style={styles.listWrapper}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[
-              styles.contentContainer,
-              { paddingLeft, paddingRight },
-            ]}
-            data={courses}
-            renderItem={info => {
-              return <CourseListItem item={info.item} />;
-            }}
-          />
-        </View>
-      </View>
     </View>
   );
 });
